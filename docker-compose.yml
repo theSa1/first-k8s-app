@@ -1,0 +1,24 @@
+version: "3.1"
+
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: unguessable-password
+    volumes:
+      - db-data:/var/lib/mysql
+
+  app:
+    image: k8-app
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: mysql://root:unguessable-password@db:3306/app-db
+
+volumes:
+  db-data:
+    driver: local

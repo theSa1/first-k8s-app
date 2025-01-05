@@ -1,0 +1,23 @@
+{
+  "name": "first-k8s-infra",
+  "module": "src/app.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/express": "^5.0.0",
+    "prisma": "^6.1.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "6.1.0",
+    "express": "^4.21.2",
+    "hono": "^4.6.16"
+  },
+  "scripts": {
+    "dev": "bun --hot src/app.ts",
+    "start": "bun src/app.ts",
+    "start:migrate": "prisma migrate deploy && bun src/app.ts"
+  }
+}
