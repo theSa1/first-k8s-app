@@ -1,42 +1,69 @@
-import express from "express";
+import { Hono } from "hono";
 import { db } from "./lib/db";
+import { createNotesSchema, deleteNotesSchema } from "./lib/schema";
+import { serveStatic } from "hono/bun";
 
-const app = express();
+const app = new Hono();
 
-app.get("/", async (req, res) => {
+app.get("/notes", async (c) => {
   console.log("GET /");
   const notes = await db.note.findMany();
 
-  const resString =
-    notes.length === 0
-      ? "No Notes"
-      : notes
-          .map((note) => {
-            return `${note.id}: ${note.note}`;
-          })
-          .join("\n");
-
-  res.send(resString);
+  return c.json(notes);
 });
 
-app.get("/create/:note", async (req, res) => {
-  const note = req.params.note;
-  console.log("GET /create/:note", note);
+app.post("/create", async (c) => {
+  console.log("POST /create");
+  const body = createNotesSchema.safeParse(await c.req.json());
 
-  if (!note) {
-    res.send("No note provided");
-    return;
+  if (!body.success) {
+    console.log(body.error);
+    return c.json({
+      success: false,
+      errors: "Invalid body",
+    });
   }
+
+  const { content } = body.data;
 
   await db.note.create({
     data: {
-      note,
+      note: content,
     },
   });
 
-  res.send("Note created");
+  return c.json({
+    success: true,
+  });
 });
 
-app.listen(8080, "0.0.0.0", () => {
-  console.log("Server running on http://0.0.0.0:8080");
+app.post("/delete", async (c) => {
+  console.log("POST /delete");
+  const body = deleteNotesSchema.safeParse(await c.req.json());
+
+  if (!body.success) {
+    return c.json({
+      success: false,
+      errors: "Invalid body",
+    });
+  }
+
+  const { id } = body.data;
+
+  await db.note.delete({
+    where: {
+      id,
+    },
+  });
+
+  return c.json({
+    success: true,
+  });
 });
+
+app.get("*", serveStatic({ path: "./public" }));
+
+export default {
+  port: 8080,
+  fetch: app.fetch,
+};
